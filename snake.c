@@ -81,12 +81,12 @@ int newTail(struct snakePart *head) {
   new->last = i;
 }
 
-int newSegment(struct snakePart *head) {
+int newSegment(struct snakePart *head, int num) {
   struct snakePart *p = head;
   int i;
   while (p->next) 
     p = p->next;
-  for(i = 0; i < 5; i++) {
+  for(i = 0; i < num; i++) {
     newTail(p);
     p = p->next;
   }
@@ -169,40 +169,46 @@ int hitSelf(struct snakePart *head) {
   }
 }
 
+int update(struct snakePart *head, struct apple **apples) {
+  int k;
+  static char direction = RIGHT;
+  k = getch();
+  switch(k) {
+    case 'w':
+      direction = UP;
+      break;
+    case 's':
+      direction = DOWN;
+      break;
+    case 'a':
+      direction = LEFT;
+      break;
+    case 'd':
+      direction = RIGHT;
+      break;
+  }
+  if(hitSelf(head))
+    return 0;
+  if(hitApple(head, apples)) {
+    newSegment(head, 20);
+    removeApple(apples, head->x, head->y);
+    addApple(apples, RANDRANGE(0, 50), RANDRANGE(0, 50));
+  }
+  erase();
+  drawSnake(head);
+  drawApples(apples);
+  moveSnake(head, direction);
+  return 1;
+}
+
 int main(int argc, char **argv) {
+  int status = 1;
   setup();
   struct snakePart *head = createSnake(50, 50, '@');
   struct apple **apples = malloc(sizeof(struct apple*) * MAXAPPLES);
-  int k;
-  char direction = RIGHT;
   addApple(apples, RANDRANGE(0, 50), RANDRANGE(0, 50));
-  while(k != 'q') {
-    k = getch();
-    switch(k) {
-      case 'w':
-        direction = UP;
-        break;
-      case 's':
-        direction = DOWN;
-        break;
-      case 'a':
-        direction = LEFT;
-        break;
-      case 'd':
-        direction = RIGHT;
-        break;
-    }
-    if(hitSelf(head))
-      break;
-    if(hitApple(head, apples)) {
-      newSegment(head);
-      removeApple(apples, head->x, head->y);
-      addApple(apples, RANDRANGE(0, 50), RANDRANGE(0, 50));
-    }
-    erase();
-    drawSnake(head);
-    drawApples(apples);
-    moveSnake(head, direction);
+  while(status) {
+    status = update(head, apples);
     usleep(100000);
   }
   endwin();
